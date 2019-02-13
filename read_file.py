@@ -44,10 +44,10 @@ class ReadFiles:
             neighbor_z = [[] for _ in range(ATOM_NUMBER)]
             distance_a = [[] for _ in range(ATOM_NUMBER)]
 
-            neighbor_x, neighbor_y, neighbor_z = self.extract_neighbors(x_cat, y_cat, z_cat,
-                                                                        neighbor_x, neighbor_y, neighbor_z,
-                                                                        distance_a)
-            print(neighbor_x)
+            neighbor_x, neighbor_y, neighbor_z, distance_a = self.extract_neighbors(x_cat, y_cat, z_cat,
+                                                                                    neighbor_x, neighbor_y, neighbor_z,
+                                                                                    distance_a)
+            print(distance_a[0].size(), neighbor_x[0].size())
             print("file " + str(i) + " has been retrieved")
 
     def extract_neighbors(self, x_cat, y_cat, z_cat, neighbor_x, neighbor_y, neighbor_z, distance_a):
@@ -67,22 +67,26 @@ class ReadFiles:
                        (z_cat.t() - z_cat_temp).pow(2)
 
             position = (torch.le(distance, CUT_OFF ** 2) == 1).nonzero()
-            position = position[(position[:, 0] != position[:, 1]).nonzero().squeeze(1)]
-            print(position)
+            if [x_direct, y_direct, z_direct] == [0, 0, 0]:
+                position = position[(position[:, 0] != position[:, 1]).nonzero().squeeze(1)]
 
             print("-------------------------------------------")
 
             for i in range(ATOM_NUMBER):
                 final_position = position[(position[:, 0] == i).nonzero().squeeze(1)][:, 1]
-                final_position_2 = position[(position[:, 0] == i).nonzero().squeeze(1)]
                 if final_position.size()[0] == 0:
                     continue
                 neighbor_x[i].append(torch.index_select(x_cat_temp.t(), 0, final_position)[:, 0])
                 neighbor_y[i].append(torch.index_select(y_cat_temp.t(), 0, final_position)[:, 0])
                 neighbor_z[i].append(torch.index_select(z_cat_temp.t(), 0, final_position)[:, 0])
-                # distance_a.append(torch.index_select(distance, 0, final_position_2))
+                temp_distance = torch.reshape(torch.index_select(distance, 0,
+                                                                 torch.tensor([i], device="cuda:0")), (-1, ))
+                distance_a[i].append(torch.index_select(temp_distance, 0, final_position))
 
         for i in range(ATOM_NUMBER):
             neighbor_x[i] = torch.cat(tuple(neighbor_x[i]), dim=0)
 
-        return neighbor_x, neighbor_y, neighbor_y
+        for i in range(ATOM_NUMBER):
+            distance_a[i] = torch.cat(tuple(distance_a[i]), dim=0)
+
+        return neighbor_x, neighbor_y, neighbor_y, distance_a
