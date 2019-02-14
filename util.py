@@ -45,7 +45,7 @@ class GenerateSampleGrid:
         for eta, rs in itertools.product(self.radial_parameters[0], self.radial_parameters[1]):
             result.append([eta, rs])
 
-        return torch.tensor(result, device=self.device)
+        return torch.tensor(result, device=self.device, dtype=torch.float64)
 
     def generate_angular_grid(self):
         result = []
@@ -53,7 +53,7 @@ class GenerateSampleGrid:
                                                       self.angular_parameters[2], self.angular_parameters[3]):
             result.append([eta, rs, zeta, theta])
 
-        return torch.tensor(result, device=self.device)
+        return torch.tensor(result, device=self.device, dtype=torch.float64)
 
 
 

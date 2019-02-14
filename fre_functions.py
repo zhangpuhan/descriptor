@@ -13,3 +13,7 @@ def f_c(rs_list):
     step_5 = torch.add(step_4, 0.5)
     return step_5
 
+
+def exponential_map(manipulate_tensor, radial_sample_comb):
+    return torch.exp((-(manipulate_tensor - radial_sample_comb[:, 1:]) ** 2.0).mul(radial_sample_comb[:, :1]))
+

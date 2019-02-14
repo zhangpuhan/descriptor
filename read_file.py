@@ -5,7 +5,7 @@ import pandas as pd
 import natsort
 import torch
 from constant import DIRECTIONS, FILE_SIZES, CUT_OFF, ATOM_NUMBER
-from fre_functions import f_c
+from fre_functions import f_c, exponential_map
 
 
 class Aev:
@@ -104,7 +104,11 @@ class Aev:
 
         return neighbor_x, neighbor_y, neighbor_z, distance_a
 
-    def generate_radial_samples(self, distance_a, radial_sample_comb, radial_neighbor_combinations):
+    @staticmethod
+    def generate_radial_samples(distance_a, radial_sample_comb, radial_neighbor_combinations):
+        result = []
+        dominant_size = radial_sample_comb.size()[0]
+        print("generating " + str(dominant_size) + " radial elements")
         for i in range(len(distance_a)):
             neighbor_size = distance_a[i].size()[0]
             neighbor_pairs = radial_neighbor_combinations[neighbor_size]
@@ -112,7 +116,17 @@ class Aev:
                                             for __, _ in zip(distance_a[i], neighbor_pairs)]))
 
             rs_list = rs_list_init[:, 1:]
-            print(f_c(rs_list))
+            manipulate_tensor = torch.reshape(torch.cat(
+                tuple([rs_list for _ in range(dominant_size)])), (dominant_size, -1))
+            # print(manipulate_tensor)
+            # print(f_c(manipulate_tensor))
+            result.append(exponential_map(
+                manipulate_tensor, radial_sample_comb).mul(f_c(manipulate_tensor)).sum(dim=1))
+
+        return result
+
+    @staticmethod
+    def generate_angular_samples():
 
 
 
