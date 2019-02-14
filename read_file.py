@@ -54,6 +54,9 @@ class Aev:
             test = torch.tensor([[0, 1, 2],
                     [0, 1, 3],
                     [0, 2, 3]], device='cuda:0')
+
+            # torch.cat([torch.index_select(A, 0, i).unsqueeze(0) for a, i in zip(A, ind)])
+
             # print(neighbor_y[1])
             # print(neighbor_z[1])
             print(distance_a[1].size()[0], neighbor_x[1].size()[0])
