@@ -7,7 +7,7 @@ import torch
 from constant import DIRECTIONS, FILE_SIZES, CUT_OFF, ATOM_NUMBER
 
 
-class ReadFiles:
+class Aev:
     """ processing raw data """
     def __init__(self, path):
         self.filenames = [] 
@@ -51,6 +51,10 @@ class ReadFiles:
                                                                                     distance_a)
             print(distance_a[1])
             print(neighbor_x[1])
+            test = torch.tensor([[0, 1, 2],
+                    [0, 1, 3],
+                    [0, 2, 3]], device='cuda:0')
+            print(torch.cat([torch.index_select(a, 1, i).unsqueeze(0) for a, i in zip(distance_a[1], test)]))
             # print(neighbor_y[1])
             # print(neighbor_z[1])
             print(distance_a[1].size()[0], neighbor_x[1].size()[0])
@@ -62,8 +66,6 @@ class ReadFiles:
             neighbor_y[i].append(torch.reshape(y_cat[0][i], (1, )))
             neighbor_z[i].append(torch.reshape(z_cat[0][i], (1, )))
             distance_a[i].append(torch.reshape(torch.tensor(0.0, device=self.device, dtype=torch.float64), (1, )))
-
-        print(x_cat[0][i])
 
         for x_direct, y_direct, z_direct in DIRECTIONS:
             print("### dealing with direction " + str([x_direct, y_direct, z_direct]))

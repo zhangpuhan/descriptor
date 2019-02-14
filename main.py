@@ -3,9 +3,11 @@
 import read_file
 import util
 
-a = read_file.ReadFiles("data")
+a = read_file.Aev("data")
 b = util.GenerateCombinations()
-neighbor_combinations = b.generate_combination_dic(200, 2)
+angular_neighbor_combinations = b.generate_combination_dic(200, 2)
+radial_neighbor_combinations = b.generate_combination_dic(200, 1)
 
 a.process_files()
-print(neighbor_combinations)
+print(angular_neighbor_combinations)
+print(radial_neighbor_combinations)

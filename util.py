@@ -10,11 +10,11 @@ class GenerateCombinations:
     def combination_2(self, n_number, n_select):
         nums = [i for i in range(1, n_number)]
         result = []
-        self.dfs(nums, 0, [], result, n_select)
+        self.dfs(nums, 0, [0], result, n_select)
         return torch.tensor(result, device=self.device)
 
     def dfs(self, nums, index, path, result, n_select):
-        if len(path) == n_select:
+        if len(path) == n_select + 1:
             result.append(list(path))
             return
 
@@ -29,6 +29,8 @@ class GenerateCombinations:
             result[i] = self.combination_2(i, n_select)
 
         return result
+
+
 
 
 
