@@ -5,6 +5,7 @@ import pandas as pd
 import natsort
 import torch
 from constant import DIRECTIONS, FILE_SIZES, CUT_OFF, ATOM_NUMBER
+from fre_functions import f_c
 
 
 class Aev:
@@ -25,7 +26,9 @@ class Aev:
             print('Allocated:', round(torch.cuda.memory_allocated(0) / 1024**3, 1), 'GB')
             print('Cached:   ', round(torch.cuda.memory_cached(0) / 1024**3, 1), 'GB')
 
-    def process_files(self):
+    def process_files(self, radial_sample_comb, angular_sample_comb, radial_neighbor_combinations,
+                      angular_neighbor_combinations):
+
         print(str(len(self.filenames)) + " files need to be processed")
         for i in range(FILE_SIZES):
             coordinate_tensor = torch.tensor(pd.read_csv(self.filenames[i], header=None).values, device=self.device)
@@ -49,11 +52,8 @@ class Aev:
             neighbor_x, neighbor_y, neighbor_z, distance_a = self.extract_neighbors(x_cat, y_cat, z_cat,
                                                                                     neighbor_x, neighbor_y, neighbor_z,
                                                                                     distance_a)
-            print(distance_a[1])
-            print(neighbor_x[1])
-            test = torch.tensor([[0, 1, 2],
-                    [0, 1, 3],
-                    [0, 2, 3]], device='cuda:0')
+
+            self.generate_radial_samples(distance_a, radial_sample_comb, radial_neighbor_combinations)
 
             # torch.cat([torch.index_select(A, 0, i).unsqueeze(0) for a, i in zip(A, ind)])
 
@@ -103,3 +103,17 @@ class Aev:
             distance_a[i] = torch.cat(tuple(distance_a[i]), dim=0)
 
         return neighbor_x, neighbor_y, neighbor_z, distance_a
+
+    def generate_radial_samples(self, distance_a, radial_sample_comb, radial_neighbor_combinations):
+        for i in range(len(distance_a)):
+            neighbor_size = distance_a[i].size()[0]
+            neighbor_pairs = radial_neighbor_combinations[neighbor_size]
+            rs_list_init = torch.cat(tuple([torch.index_select(distance_a[i], 0, _).unsqueeze(0)
+                                            for __, _ in zip(distance_a[i], neighbor_pairs)]))
+
+            rs_list = rs_list_init[:, 1:]
+            print(f_c(rs_list))
+
+
+
+

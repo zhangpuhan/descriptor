@@ -1,5 +1,7 @@
 """ This file contains utility functions """
 import torch
+from constant import RADIAL_SAMPLE_RUBRIC, ANGULAR_SAMPLE_RUBRIC
+import itertools
 
 
 class GenerateCombinations:
@@ -30,6 +32,28 @@ class GenerateCombinations:
 
         return result
 
+
+class GenerateSampleGrid:
+    """ this function generates sample grids """
+    def __init__(self):
+        self.radial_parameters = list(RADIAL_SAMPLE_RUBRIC.values())
+        self.angular_parameters = list(ANGULAR_SAMPLE_RUBRIC.values())
+        self.device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+
+    def generate_radial_grid(self):
+        result = []
+        for eta, rs in itertools.product(self.radial_parameters[0], self.radial_parameters[1]):
+            result.append([eta, rs])
+
+        return torch.tensor(result, device=self.device)
+
+    def generate_angular_grid(self):
+        result = []
+        for eta, rs, zeta, theta in itertools.product(self.angular_parameters[0], self.angular_parameters[1],
+                                                      self.angular_parameters[2], self.angular_parameters[3]):
+            result.append([eta, rs, zeta, theta])
+
+        return torch.tensor(result, device=self.device)
 
 
 
