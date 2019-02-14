@@ -22,7 +22,7 @@ class Aev:
         print('Using device:', self.device)
         if self.device.type == 'cuda':
             print(torch.cuda.get_device_name(0))
-            print('Memory Usage********************************')
+            print('Memory Usage *******************************')
             print('Allocated:', round(torch.cuda.memory_allocated(0) / 1024**3, 1), 'GB')
             print('Cached:   ', round(torch.cuda.memory_cached(0) / 1024**3, 1), 'GB')
 
@@ -43,7 +43,7 @@ class Aev:
             y_cat = torch.cat(tuple([y_coordinate for _ in range(y_coordinate.size()[1])]), 0)
             z_cat = torch.cat(tuple([z_coordinate for _ in range(z_coordinate.size()[1])]), 0)
 
-            print("### 27 directions need to be handled. ###")
+            # print("### 27 directions need to be handled. ###")
             neighbor_x = [[] for _ in range(ATOM_NUMBER)]
             neighbor_y = [[] for _ in range(ATOM_NUMBER)]
             neighbor_z = [[] for _ in range(ATOM_NUMBER)]
@@ -54,12 +54,13 @@ class Aev:
                                                                                     distance_a)
 
             self.generate_radial_samples(distance_a, radial_sample_comb, radial_neighbor_combinations)
+            self.generate_angular_samples(distance_a, angular_sample_comb, angular_neighbor_combinations)
 
             # torch.cat([torch.index_select(A, 0, i).unsqueeze(0) for a, i in zip(A, ind)])
 
             # print(neighbor_y[1])
             # print(neighbor_z[1])
-            print(distance_a[1].size()[0], neighbor_x[1].size()[0])
+            # print(distance_a[1].size()[0], neighbor_x[1].size()[0])
             print("file " + str(i) + " has been retrieved")
 
     def extract_neighbors(self, x_cat, y_cat, z_cat, neighbor_x, neighbor_y, neighbor_z, distance_a):
@@ -70,7 +71,7 @@ class Aev:
             distance_a[i].append(torch.reshape(torch.tensor(0.0, device=self.device, dtype=torch.float64), (1, )))
 
         for x_direct, y_direct, z_direct in DIRECTIONS:
-            print("### dealing with direction " + str([x_direct, y_direct, z_direct]))
+            # print("### dealing with direction " + str([x_direct, y_direct, z_direct]))
 
             x_cat_temp = x_cat.add(x_direct).clone()
             y_cat_temp = y_cat.add(y_direct).clone()
@@ -83,7 +84,7 @@ class Aev:
             if [x_direct, y_direct, z_direct] == [0, 0, 0]:
                 position = position[(position[:, 0] != position[:, 1]).nonzero().squeeze(1)]
 
-            print("-------------------------------------------")
+            # print("-------------------------------------------")
 
             for i in range(ATOM_NUMBER):
                 final_position = position[(position[:, 0] == i).nonzero().squeeze(1)][:, 1]
@@ -126,7 +127,31 @@ class Aev:
         return result
 
     @staticmethod
-    def generate_angular_samples():
+    def generate_angular_samples(distance_a, angular_sample_comb, angular_neighbor_combinations):
+        result = []
+        dominant_size = angular_sample_comb.size()[0]
+        print(dominant_size)
+        print("generating " + str(dominant_size) + " angular elements")
+        for i in range(5):
+            neighbor_size = distance_a[i].size()[0]
+            neighbor_triples = angular_neighbor_combinations[neighbor_size]
+            # print(neighbor_triples)
+
+            # part_1: last_fc
+            rs_list_init = torch.cat(tuple([torch.index_select(distance_a[i], 0, _).unsqueeze(0)
+                                            for __, _ in zip(neighbor_triples, neighbor_triples)]))
+            rs_list = rs_list_init[:, 1:]
+            mul_list_1 = f_c(rs_list[:, :1]).mul(f_c(rs_list[:, 1:]))
+            manipulate_tensor_1 = torch.reshape(torch.cat(
+                tuple([mul_list_1 for _ in range(dominant_size)])), (dominant_size, -1))
+
+            print(manipulate_tensor_1.size())
+
+            # part_2: exponential
+            mul_list__2 = rs_list[:, :1].add(rs_list[:, 1:])
+            print(mul_list__2)
+
+
 
 
 
