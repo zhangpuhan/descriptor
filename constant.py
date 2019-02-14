@@ -33,3 +33,5 @@ DIRECTIONS = [[-BOX_SIZE, -BOX_SIZE, -BOX_SIZE],
               [-BOX_SIZE, BOX_SIZE, BOX_SIZE],
               [0, BOX_SIZE, BOX_SIZE],
               [BOX_SIZE, BOX_SIZE, BOX_SIZE]]
+
+SAMPLE_RUBRIC = {}

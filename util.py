@@ -4,11 +4,14 @@ import torch
 
 class GenerateCombinations:
     """ this function generate position combinations """
+    def __init__(self):
+        self.device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+
     def combination_2(self, n_number, n_select):
         nums = [i for i in range(1, n_number)]
         result = []
         self.dfs(nums, 0, [], result, n_select)
-        return torch.tensor(result, device="cuda:0")
+        return torch.tensor(result, device=self.device)
 
     def dfs(self, nums, index, path, result, n_select):
         if len(path) == n_select:
@@ -26,6 +29,7 @@ class GenerateCombinations:
             result[i] = self.combination_2(i, n_select)
 
         return result
+
 
 
 
