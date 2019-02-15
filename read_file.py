@@ -4,6 +4,7 @@ import os
 import pandas as pd
 import natsort
 import torch
+import time
 from constant import DIRECTIONS, FILE_SIZES, CUT_OFF, ATOM_NUMBER
 from fre_functions import f_c, exponential_map
 
@@ -31,6 +32,7 @@ class Aev:
 
         print(str(len(self.filenames)) + " files need to be processed")
         for i in range(FILE_SIZES):
+            start_time = time.time()
             coordinate_tensor = torch.tensor(pd.read_csv(self.filenames[i], header=None).values, device=self.device)
             print("********************************************")
             print("Data file " + self.filenames[i] + " is being processing:")
@@ -53,15 +55,16 @@ class Aev:
                                                                                     neighbor_x, neighbor_y, neighbor_z,
                                                                                     distance_a)
 
-            self.generate_radial_samples(distance_a, radial_sample_comb, radial_neighbor_combinations)
-            self.generate_angular_samples(distance_a, angular_sample_comb, angular_neighbor_combinations)
-
-            # torch.cat([torch.index_select(A, 0, i).unsqueeze(0) for a, i in zip(A, ind)])
+            result_radial = self.generate_radial_samples(distance_a, radial_sample_comb, radial_neighbor_combinations)
+            result_angular = self.generate_angular_samples(distance_a, angular_sample_comb,
+                                                           angular_neighbor_combinations,
+                                                           neighbor_x, neighbor_y, neighbor_z)
 
             # print(neighbor_y[1])
             # print(neighbor_z[1])
             # print(distance_a[1].size()[0], neighbor_x[1].size()[0])
             print("file " + str(i) + " has been retrieved")
+            print("--- %s seconds ---" % (time.time() - start_time))
 
     def extract_neighbors(self, x_cat, y_cat, z_cat, neighbor_x, neighbor_y, neighbor_z, distance_a):
         for i in range(ATOM_NUMBER):
@@ -127,12 +130,12 @@ class Aev:
         return result
 
     @staticmethod
-    def generate_angular_samples(distance_a, angular_sample_comb, angular_neighbor_combinations):
+    def generate_angular_samples(distance_a, angular_sample_comb, angular_neighbor_combinations,
+                                 neighbor_x, neighbor_y, neighbor_z):
         result = []
         dominant_size = angular_sample_comb.size()[0]
-        print(dominant_size)
         print("generating " + str(dominant_size) + " angular elements")
-        for i in range(5):
+        for i in range(len(distance_a)):
             neighbor_size = distance_a[i].size()[0]
             neighbor_triples = angular_neighbor_combinations[neighbor_size]
             # print(neighbor_triples)
@@ -145,11 +148,51 @@ class Aev:
             manipulate_tensor_1 = torch.reshape(torch.cat(
                 tuple([mul_list_1 for _ in range(dominant_size)])), (dominant_size, -1))
 
-            print(manipulate_tensor_1.size())
-
             # part_2: exponential
-            mul_list__2 = rs_list[:, :1].add(rs_list[:, 1:])
-            print(mul_list__2)
+            mul_list_2 = rs_list[:, :1].add(rs_list[:, 1:]).div(2.0)
+            manipulate_tensor_2 = torch.reshape(torch.cat(
+                tuple([mul_list_2 for _ in range(dominant_size)])), (dominant_size, -1))
+            manipulate_tensor_2 = torch.exp(((manipulate_tensor_2 - angular_sample_comb[:, 1:2])**2.0)
+                                            .mul(-angular_sample_comb[:, :1])).mul(manipulate_tensor_1)
+
+            # part_3: angular
+            x_temp_list = torch.cat(tuple([torch.index_select(neighbor_x[i], 0, _).unsqueeze(0)
+                                           for __, _ in zip(neighbor_triples, neighbor_triples)]))
+            y_temp_list = torch.cat(tuple([torch.index_select(neighbor_y[i], 0, _).unsqueeze(0)
+                                           for __, _ in zip(neighbor_triples, neighbor_triples)]))
+            z_temp_list = torch.cat(tuple([torch.index_select(neighbor_z[i], 0, _).unsqueeze(0)
+                                           for __, _ in zip(neighbor_triples, neighbor_triples)]))
+
+            x_component_1 = x_temp_list[:, 1:2] - x_temp_list[:, :1]
+            y_component_1 = y_temp_list[:, 1:2] - y_temp_list[:, :1]
+            z_component_1 = z_temp_list[:, 1:2] - z_temp_list[:, :1]
+
+            x_component_2 = x_temp_list[:, 2:3] - x_temp_list[:, :1]
+            y_component_2 = y_temp_list[:, 2:3] - y_temp_list[:, :1]
+            z_component_2 = z_temp_list[:, 2:3] - z_temp_list[:, :1]
+
+            inner_product = \
+                x_component_1 * x_component_2 + y_component_1 * y_component_2 + z_component_1 * z_component_2
+
+            cosine_triple_angle = inner_product.div(rs_list[:, 0:1]).div(rs_list[:, 1:2])
+            sine_triple_angle = torch.sqrt((-cosine_triple_angle**2.0).add(1.0))
+            manipulate_tensor_3 = torch.reshape(torch.cat(
+                tuple([cosine_triple_angle for _ in range(dominant_size)])), (dominant_size, -1))
+            manipulate_tensor_4 = torch.reshape(torch.cat(
+                tuple([sine_triple_angle for _ in range(dominant_size)])), (dominant_size, -1))
+            manipulate_tensor_5 = \
+                torch.cos(angular_sample_comb[:, 3:]).mul(
+                    manipulate_tensor_3).add(torch.sin(angular_sample_comb[:, 3:]).mul(manipulate_tensor_4))
+            manipulate_tensor_5 = (manipulate_tensor_5.add(1.0)).pow(
+                angular_sample_comb[:, 2:3]).mul(2.0**(1 - angular_sample_comb[:, 2:3])).mul(manipulate_tensor_2)
+
+            result.append(manipulate_tensor_5.sum(dim=1))
+
+        return result
+
+
+
+
 
 
 
