@@ -20,6 +20,7 @@ class Aev:
         self.filenames = natsort.natsorted(self.filenames)
         
         self.device = torch.device('cpu')
+        # self.device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
         print('Using device:', self.device)
         if self.device.type == 'cuda':
             print(torch.cuda.get_device_name(0))
