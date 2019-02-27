@@ -31,6 +31,9 @@ class Aev:
     def process_files(self, radial_sample_comb, angular_sample_comb, radial_neighbor_combinations,
                       angular_neighbor_combinations):
 
+        force_result = []
+        train_set = []
+
         print(str(len(self.filenames)) + " files need to be processed")
         for i in range(FILE_SIZES):
             start_time = time.time()
@@ -61,11 +64,18 @@ class Aev:
                                                            angular_neighbor_combinations,
                                                            neighbor_x, neighbor_y, neighbor_z)
 
+            radial_temp = torch.reshape(torch.cat(tuple(result_radial)), (-1, result_radial[0].size()[0]))
+            angular_temp = torch.reshape(torch.cat(tuple(result_angular)), (-1, result_angular[0].size()[0]))
+            force_result.append(force)
+            train_set.append(torch.cat((radial_temp, angular_temp), 1))
+
             # print(neighbor_y[1])
             # print(neighbor_z[1])
             # print(distance_a[1].size()[0], neighbor_x[1].size()[0])
             print("file " + str(i) + " has been retrieved")
             print("--- %s seconds ---" % (time.time() - start_time))
+
+        return train_set, force_result
 
     def extract_neighbors(self, x_cat, y_cat, z_cat, neighbor_x, neighbor_y, neighbor_z, distance_a):
         for i in range(ATOM_NUMBER):
