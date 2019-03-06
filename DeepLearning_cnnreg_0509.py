@@ -1,4 +1,5 @@
 import numpy as np
+import torch
 import tensorflow as tf
 from keras.models import Sequential
 from keras.layers import Dense
@@ -14,13 +15,11 @@ np.random.seed(seed)
 
 # load data file
 
-tf.Session(config=tf.ConfigProto(log_device_placement=True))
+train_X = torch.load('data/aev_tensor.pt').cpu().numpy()
+train_Y = torch.load('data/force_tensor.pt').cpu().numpy()
 
-train_X = np.genfromtxt('../train_matrix_input.csv', delimiter=",")
-train_Y = np.genfromtxt('../train_matrix_output.csv', delimiter=",")
-
-test_X = np.genfromtxt('../test_matrix_input.csv', delimiter=",")
-test_Y = np.genfromtxt('../test_matrix_realresult.csv', delimiter=",")
+test_X = torch.load('testdata/testaev_tensor.pt').cpu().numpy()
+test_Y = torch.load('testdata/testforce_tensor.pt').cpu().numpy()
 
 num_input = train_X.shape[1]
 # print(num_input)
@@ -48,7 +47,7 @@ model.add(Dense(num_output, kernel_initializer='glorot_uniform', activation='lin
 
 # Compile model
 model.compile(loss='mean_squared_error', optimizer='adam', metrics=['mse', 'mae', 'mape', 'cosine'])
-kb.set_value(model.optimizer.lr, .00001)
+kb.set_value(model.optimizer.lr, .0001)
 print(kb.get_value(model.optimizer.lr))
 
 early_stop = EarlyStopping(monitor='mean_squared_error', min_delta=0.0001, patience=10, verbose=1, mode='auto')
@@ -92,10 +91,10 @@ y_train_pred = model.predict(train_scale_X)
 
 y_train_pred = scalar.inverse_transform(y_train_pred)
 train_inverse_Y = scalar.inverse_transform(train_scale_Y)
-
 meanAbsError_train = mean_absolute_error(train_Y, y_train_pred)
 
 print(meanAbsError_train)
 
 print(y_train_pred)
 np.savetxt('train.out', y_train_pred)
+

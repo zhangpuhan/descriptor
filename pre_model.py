@@ -1,6 +1,7 @@
 """ This file includes a preliminary model """
 import torch
 import torch.nn as nn
+from torch.autograd import Variable
 
 # import data
 force_tensor = torch.load("data/force_tensor.pt")
@@ -55,10 +56,13 @@ optimizer = torch.optim.Adam(net.parameters(), lr=learning_rate)
 
 loss_log = []
 
+x_mini = Variable(aev_tensor[0: batch_size])
+print(x_mini)
+
 for e in range(epochs):
-    for i in range(0, aev_tensor.size()[0], batch_size):
-        x_mini = aev_tensor[i: i + batch_size].float().item()
-        y_mini = force_tensor[i: i + batch_size].float().item()
+    for i in range(0, aev_tensor.size()[0]):
+        x_mini = aev_tensor[i: i + 1].float()
+        y_mini = force_tensor[i: i + 1].float()
 
         optimizer.zero_grad()
         net_out = net(x_mini)
@@ -66,8 +70,7 @@ for e in range(epochs):
         loss = loss_fn(net_out, y_mini)
         loss.backward()
         optimizer.step()
+	print(loss.data)
 
-        if i % 100 == 0:
-            loss_log.append(loss.data[0])
 
-    print('Epoch: {} - Loss: {:.6f}'.format(e, loss.data[0]))
+
