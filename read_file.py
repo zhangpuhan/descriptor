@@ -19,8 +19,8 @@ class Aev:
                     self.filenames.append(path + "/" + filename)
         self.filenames = natsort.natsorted(self.filenames)
         
-        # self.device = torch.device('cpu')
-        self.device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+        self.device = torch.device('cpu')
+        # self.device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
         print('Using device:', self.device)
         if self.device.type == 'cuda':
             print(torch.cuda.get_device_name(0))
@@ -35,7 +35,7 @@ class Aev:
         train_set = []
 
         print(str(len(self.filenames)) + " files need to be processed")
-        for i in range(FILE_SIZES):
+        for i in range(800, FILE_SIZES):
             start_time = time.time()
             coordinate_tensor = torch.tensor(pd.read_csv(self.filenames[i], header=None).values, device=self.device)
             print("********************************************")
